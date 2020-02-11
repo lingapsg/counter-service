@@ -20,7 +20,7 @@ public class CounterService {
 
     public Mono<Counter> createCounter(@Valid Counter counter) {
         return Mono.fromCallable(() -> {
-            if (Objects.nonNull(counterMap.get(counter.getName()))) {
+            if (counterMap.containsKey(counter.getName())) {
                 throw new ResourceConflictException(String.format("%s already exists", counter.getName()));
             }
             counterMap.put(counter.getName(), counter.getValue());
@@ -48,9 +48,7 @@ public class CounterService {
     public Mono<Counter> getCounter(String counterName) {
         return Mono.fromCallable(() -> {
             Integer value = counterMap.get(counterName);
-            if (Objects.isNull(value)) {
-                throw new ResourceNotFoundException(String.format("%s not found", counterName));
-            }
+            validateResourceExists(counterName, value);
             return Counter
                     .builder()
                     .name(counterName)
@@ -62,9 +60,7 @@ public class CounterService {
     public Mono<Counter> updateCounter(String counterName) {
         return Mono.fromCallable(() -> {
             Integer value = counterMap.computeIfPresent(counterName, (s, integer) -> ++integer);
-            if (Objects.isNull(value)) {
-                throw new ResourceNotFoundException(String.format("%s not found", counterName));
-            }
+            validateResourceExists(counterName, value);
             counterMap.put(counterName, value);
             return Counter
                     .builder()
@@ -72,5 +68,11 @@ public class CounterService {
                     .value(value)
                     .build();
         });
+    }
+
+    private void validateResourceExists(String counterName, Integer value) {
+        if (Objects.isNull(value)) {
+            throw new ResourceNotFoundException(String.format("%s not found", counterName));
+        }
     }
 }
