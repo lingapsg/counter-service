@@ -9,6 +9,7 @@ import reactor.core.publisher.Mono;
 
 import javax.validation.Valid;
 import java.util.Map;
+import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
@@ -19,7 +20,7 @@ public class CounterService {
 
     public Mono<Counter> createCounter(@Valid Counter counter) {
         return Mono.fromCallable(() -> {
-            if (counterMap.get(counter.getName()) != null) {
+            if (Objects.nonNull(counterMap.get(counter.getName()))) {
                 throw new ResourceConflictException(String.format("%s already exists", counter.getName()));
             }
             counterMap.put(counter.getName(), counter.getValue());
@@ -47,7 +48,7 @@ public class CounterService {
     public Mono<Counter> getCounter(String counterName) {
         return Mono.fromCallable(() -> {
             Integer value = counterMap.get(counterName);
-            if (value == null) {
+            if (Objects.isNull(value)) {
                 throw new ResourceNotFoundException(String.format("%s not found", counterName));
             }
             return Counter
@@ -61,7 +62,7 @@ public class CounterService {
     public Mono<Counter> updateCounter(String counterName) {
         return Mono.fromCallable(() -> {
             Integer value = counterMap.computeIfPresent(counterName, (s, integer) -> ++integer);
-            if (value == null) {
+            if (Objects.isNull(value)) {
                 throw new ResourceNotFoundException(String.format("%s not found", counterName));
             }
             counterMap.put(counterName, value);
